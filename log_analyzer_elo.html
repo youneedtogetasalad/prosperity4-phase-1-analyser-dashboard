@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prosperity 4 Performance Analyzer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: #888;
+            font-size: 1.1rem;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .upload-card {
+            border: 2px dashed rgba(102, 126, 234, 0.5);
+            transition: all 0.3s;
+        }
+
+        .upload-card:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .upload-area {
+            text-align: center;
+            padding: 40px 20px;
+            cursor: pointer;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            font-size: 1.1rem;
+            color: #ccc;
+            margin-bottom: 10px;
+        }
+
+        .upload-hint {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .version-input {
+            margin-top: 20px;
+        }
+
+        .version-input input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
+        .version-input input::placeholder {
+            color: #666;
+        }
+
+        .champion-card {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+            border: 2px solid #667eea;
+            margin-bottom: 20px;
+        }
+
+        .champion-title {
+            font-size: 0.9rem;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .champion-name {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .champion-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .stat-box {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #888;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .stat-value.positive { color: #27ae60; }
+        .stat-value.negative { color: #e74c3c; }
+        .stat-value.neutral { color: #f39c12; }
+
+        .component-breakdown {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .component-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+        }
+
+        .component-name {
+            color: #ccc;
+        }
+
+        .component-profit {
+            font-weight: 600;
+        }
+
+        .component-profit.osmium { color: #e74c3c; }
+        .component-profit.pepper { color: #9b59b6; }
+        .component-profit.maf { color: #27ae60; }
+
+        .leaderboard {
+            margin-top: 20px;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            color: #667eea;
+            margin-bottom: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .leaderboard-row {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .leaderboard-row:hover {
+            background: rgba(102, 126, 234, 0.1);
+            transform: translateX(5px);
+        }
+
+        .leaderboard-row.champion {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+            border: 1px solid rgba(102, 126, 234, 0.5);
+        }
+
+        .rank {
+            font-size: 1.2rem;
+            font-weight: 700;
+            width: 40px;
+            color: #667eea;
+        }
+
+        .rank-1 { color: #f39c12; }
+        .rank-2 { color: #bdc3c7; }
+        .rank-3 { color: #cd7f32; }
+
+        .version-info {
+            flex: 1;
+        }
+
+        .version-name {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .version-details {
+            font-size: 0.85rem;
+            color: #888;
+            margin-top: 3px;
+        }
+
+        .version-metrics {
+            text-align: right;
+        }
+
+        .profit-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .win-rate {
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        .tier-badge {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 12px;
+            margin-left: 10px;
+            font-weight: 600;
+        }
+
+        .tier-grandmaster { background: linear-gradient(135deg, #f39c12, #e74c3c); }
+        .tier-master { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
+        .tier-diamond { background: linear-gradient(135deg, #3498db, #2980b9); }
+        .tier-platinum { background: linear-gradient(135deg, #1abc9c, #16a085); }
+        .tier-gold { background: linear-gradient(135deg, #f39c12, #d68910); }
+        .tier-silver { background: linear-gradient(135deg, #95a5a6, #7f8c8d); }
+        .tier-bronze { background: linear-gradient(135deg, #cd7f32, #a0522d); }
+        .tier-unranked { background: #555; }
+
+        .insights-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid #667eea;
+            border-radius: 16px;
+            padding: 25px;
+            margin-top: 20px;
+            display: none;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .insights-panel.show {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .insights-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .insights-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .insight-metric {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .insight-label {
+            font-size: 0.75rem;
+            color: #888;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .insight-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .insight-value.positive { color: #27ae60; }
+        .insight-value.negative { color: #e74c3c; }
+        .insight-value.neutral { color: #f39c12; }
+
+        .component-chart {
+            margin-top: 20px;
+        }
+
+        .chart-title {
+            font-size: 1rem;
+            color: #ccc;
+            margin-bottom: 15px;
+        }
+
+        .chart-bar-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .chart-label {
+            width: 80px;
+            font-size: 0.85rem;
+            color: #ccc;
+        }
+
+        .chart-bar-wrapper {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            height: 30px;
+            overflow: hidden;
+            margin: 0 10px;
+            position: relative;
+        }
+
+        .chart-bar {
+            height: 100%;
+            border-radius: 8px;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            padding-left: 10px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .chart-bar.osmium {
+            background: linear-gradient(90deg, #e74c3c 0%, #c0392b 100%);
+        }
+
+        .chart-bar.pepper {
+            background: linear-gradient(90deg, #9b59b6 0%, #8e44ad 100%);
+        }
+
+        .chart-bar.maf {
+            background: linear-gradient(90deg, #27ae60 0%, #229954 100%);
+        }
+
+        .chart-value {
+            width: 70px;
+            text-align: right;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .analysis-box {
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .analysis-title {
+            font-size: 0.9rem;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .analysis-text {
+            font-size: 0.85rem;
+            color: #ccc;
+            line-height: 1.5;
+        }
+
+        .sort-controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .sort-btn {
+            padding: 8px 14px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #ccc;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sort-btn:hover {
+            background: rgba(102, 126, 234, 0.2);
+            border-color: #667eea;
+            color: #fff;
+        }
+
+        .sort-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            color: #fff;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            border: 1px solid rgba(231, 76, 60, 0.5);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        .rating-explanation {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 10px;
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        .rating-explanation h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .rating-explanation ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .rating-explanation li {
+            padding: 5px 0;
+        }
+
+        .rating-explanation li:before {
+            content: "•";
+            color: #667eea;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Prosperity 4 Performance Analyzer</h1>
+            <p>Track algorithm performance, analyze components, find the champion</p>
+        </div>
+
+        <div class="main-grid">
+            <div>
+                <div class="card upload-card">
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-icon">📤</div>
+                        <div class="upload-text">Drop competition log here</div>
+                        <div class="upload-hint">.json files from backtester or competition</div>
+                    </div>
+                    <input type="file" id="fileInput" accept=".json">
+
+                    <div class="version-input">
+                        <input type="text" id="versionName" placeholder="Version name (e.g., v37_champion)">
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 20px;">
+                    <div class="btn-group">
+                        <button class="btn btn-primary" id="exportBtn">📥 Export Data</button>
+                        <button class="btn btn-danger" id="clearBtn">🗑️ Clear All</button>
+                    </div>
+                </div>
+
+                <div class="rating-explanation">
+                    <h4>🎯 Performance Rating</h4>
+                    <ul>
+                        <li>Based on profit & consistency</li>
+                        <li>Higher profit = higher rating</li>
+                        <li>Win rate boosts rating</li>
+                        <li>Component balance matters</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div>
+                <div class="card champion-card" id="championCard" style="display: none;">
+                    <div class="champion-title">🏆 Champion</div>
+                    <div class="champion-name" id="championName">-</div>
+                    <div class="champion-stats">
+                        <div class="stat-box">
+                            <div class="stat-label">Rating</div>
+                            <div class="stat-value" id="championRating">-</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Profit</div>
+                            <div class="stat-value" id="championProfit">-</div>
+                        </div>
+                    </div>
+                    <div class="component-breakdown">
+                        <div class="component-row">
+                            <span class="component-name">OSMIUM</span>
+                            <span class="component-profit osmium" id="championOsmium">-</span>
+                        </div>
+                        <div class="component-row">
+                            <span class="component-name">PEPPER</span>
+                            <span class="component-profit pepper" id="championPepper">-</span>
+                        </div>
+                        <div class="component-row">
+                            <span class="component-name">MAF</span>
+                            <span class="component-profit maf" id="championMaf">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card leaderboard">
+                    <div class="section-title">
+                        📈 Leaderboard
+                    </div>
+                    <div class="sort-controls" id="sortControls">
+                        <button class="sort-btn active" data-sort="score">Rating ↓</button>
+                        <button class="sort-btn" data-sort="profit">Profit ↓</button>
+                        <button class="sort-btn" data-sort="name">Name A-Z</button>
+                    </div>
+                    <div id="leaderboard"></div>
+
+                    <div class="insights-panel" id="insightsPanel">
+                        <div class="insights-header">
+                            <div class="insights-title" id="insightsTitle">Algorithm Details</div>
+                            <button class="close-btn" id="closeInsights">×</button>
+                        </div>
+
+                        <div class="insights-grid">
+                            <div class="insight-metric">
+                                <div class="insight-label">Rating</div>
+                                <div class="insight-value" id="insightRating">-</div>
+                            </div>
+                            <div class="insight-metric">
+                                <div class="insight-label">Profit</div>
+                                <div class="insight-value" id="insightProfit">-</div>
+                            </div>
+                        </div>
+
+                        <div class="component-chart">
+                            <div class="chart-title">📊 Profit Breakdown</div>
+                            <div class="chart-bar-container">
+                                <div class="chart-label">OSMIUM</div>
+                                <div class="chart-bar-wrapper">
+                                    <div class="chart-bar osmium" id="osmiumBar" style="width: 0%"></div>
+                                </div>
+                                <div class="chart-value" id="osmiumValue">-</div>
+                            </div>
+                            <div class="chart-bar-container">
+                                <div class="chart-label">PEPPER</div>
+                                <div class="chart-bar-wrapper">
+                                    <div class="chart-bar pepper" id="pepperBar" style="width: 0%"></div>
+                                </div>
+                                <div class="chart-value" id="pepperValue">-</div>
+                            </div>
+                            <div class="chart-bar-container">
+                                <div class="chart-label">MAF</div>
+                                <div class="chart-bar-wrapper">
+                                    <div class="chart-bar maf" id="mafBar" style="width: 0%"></div>
+                                </div>
+                                <div class="chart-value" id="mafValue">-</div>
+                            </div>
+                        </div>
+
+                        <div class="analysis-box">
+                            <div class="analysis-title">🔍 Analysis</div>
+                            <div class="analysis-text" id="analysisText">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Performance Rating System
+        // Rating = Base profit score + Consistency bonus + Component balance bonus
+
+        function calculatePerformanceScore(profit, winRate, osmiumProfit, pepperProfit) {
+            // Base score from profit (non-linear to reward exceptional performance)
+            let baseScore = profit;
+
+            // Exponential bonus for exceptional profits
+            if (profit > 8000) {
+                baseScore += (profit - 8000) * 0.5; // 50% bonus on profit above 8k
+            } else if (profit > 6000) {
+                baseScore += (profit - 6000) * 0.2; // 20% bonus on profit above 6k
+            }
+
+            // Consistency bonus based on win rate
+            const consistencyBonus = (winRate - 0.5) * 1000; // +1000 for 100% win rate, -1000 for 0%
+            baseScore += consistencyBonus;
+
+            // Component balance bonus - reward doing well on both products
+            const bothPositive = osmiumProfit > 0 && pepperProfit > 0;
+            const strongBoth = osmiumProfit > 3000 && pepperProfit > 3000;
+
+            if (strongBoth) {
+                baseScore += 500; // Big bonus for dominating both
+            } else if (bothPositive) {
+                baseScore += 200; // Small bonus for positive on both
+            }
+
+            // Penalty for extreme imbalance (one product carrying the other)
+            const maxProfit = Math.max(osmiumProfit, pepperProfit);
+            const minProfit = Math.min(osmiumProfit, pepperProfit);
+
+            if (maxProfit > 5000 && minProfit < -1000) {
+                baseScore -= 300; // Penalty for being carried by one product
+            }
+
+            return Math.round(baseScore);
+        }
+
+        function getTierInfo(profit) {
+            if (profit >= 10000) return { name: 'Grandmaster', class: 'tier-grandmaster', emoji: '👑' };
+            if (profit >= 8500) return { name: 'Master', class: 'tier-master', emoji: '🎖️' };
+            if (profit >= 7000) return { name: 'Diamond', class: 'tier-diamond', emoji: '💎' };
+            if (profit >= 5000) return { name: 'Platinum', class: 'tier-platinum', emoji: '🥈' };
+            if (profit >= 3000) return { name: 'Gold', class: 'tier-gold', emoji: '🥇' };
+            if (profit >= 1000) return { name: 'Silver', class: 'tier-silver', emoji: '🥈' };
+            if (profit >= 0) return { name: 'Bronze', class: 'tier-bronze', emoji: '🥉' };
+            return { name: 'Unranked', class: 'tier-unranked', emoji: '❌' };
+        }
+
+        function formatNumber(num) {
+            if (num >= 0) return '+' + num.toFixed(2);
+            return num.toFixed(2);
+        }
+
+        // Data storage - migrate old data if exists
+        let algorithms = JSON.parse(localStorage.getItem('prosperity4_algorithms') || '{}');
+        let currentSort = 'score'; // 'score', 'profit', 'winRate', 'name'
+        let sortDescending = true;
+
+        // Migrate from old storage key if needed
+        if (Object.keys(algorithms).length === 0) {
+            const oldData = localStorage.getItem('prosperity_algorithms');
+            if (oldData) {
+                const oldAlgorithms = JSON.parse(oldData);
+
+                // Convert old format to new format
+                Object.entries(oldAlgorithms).forEach(([name, data]) => {
+                    // Old format had ELO, new format uses performance score
+                    algorithms[name] = {
+                        profit: data.profit || 0,
+                        winRate: (data.wins / Math.max(data.matches, 1)) || 0,
+                        componentProfits: data.componentProfits || { osmium: 0, pepper: 0 },
+                        score: calculatePerformanceScore(
+                            data.profit || 0,
+                            (data.wins / Math.max(data.matches, 1)) || 0,
+                            (data.componentProfits?.osmium || 0),
+                            (data.componentProfits?.pepper || 0)
+                        ),
+                        timestamp: Date.now()
+                    };
+                });
+
+                // Save to new key
+                localStorage.setItem('prosperity4_algorithms', JSON.stringify(algorithms));
+                console.log('Migrated data from old storage format');
+            }
+        }
+
+        // Parse component profits from activities log
+        function parseComponentProfits(data) {
+            const profits = { osmium: 0, pepper: 0 };
+
+            if (data.activitiesLog) {
+                const lines = data.activitiesLog.split('\n');
+
+                lines.forEach(line => {
+                    const parts = line.split(';');
+                    if (parts.length >= 15) {
+                        const product = parts[2];
+
+                        // Try multiple columns for PnL (different log formats)
+                        let pnl = 0;
+                        // Column 14 (15th) - standard format
+                        if (parts[14]) pnl = parseFloat(parts[14]);
+                        // Column 13 (14th) - alternative format
+                        if (isNaN(pnl) && parts[13]) pnl = parseFloat(parts[13]);
+                        // Column 7 (8th) - another format
+                        if (isNaN(pnl) && parts[7]) pnl = parseFloat(parts[7]);
+
+                        if (!isNaN(pnl)) {
+                            if (product === 'ASH_COATED_OSMIUM') {
+                                profits.osmium += pnl;
+                            } else if (product === 'INTARIAN_PEPPER_ROOT') {
+                                profits.pepper += pnl;
+                            }
+                        }
+                    }
+                });
+            }
+
+            return profits;
+        }
+
+        // Update champion display
+        function updateChampion() {
+            const versions = Object.entries(algorithms);
+
+            if (versions.length === 0) {
+                document.getElementById('championCard').style.display = 'none';
+                return;
+            }
+
+            // Sort by performance score (champion is always highest rated)
+            const sorted = sortVersions(versions);
+            const [champName, champData] = sorted[0];
+
+            document.getElementById('championCard').style.display = 'block';
+            document.getElementById('championName').textContent = champName;
+            document.getElementById('championRating').textContent = champData.score.toLocaleString();
+
+            const profit = champData.profit;
+            const profitEl = document.getElementById('championProfit');
+            profitEl.textContent = formatNumber(profit);
+            profitEl.className = 'stat-value ' + (profit >= 0 ? 'positive' : 'negative');
+
+            const osmiumProfit = champData.componentProfits.osmium;
+            const pepperProfit = champData.componentProfits.pepper;
+            const mafProfit = profit - (osmiumProfit + pepperProfit);
+
+            document.getElementById('championOsmium').textContent = formatNumber(osmiumProfit);
+            document.getElementById('championPepper').textContent = formatNumber(pepperProfit);
+            document.getElementById('championMaf').textContent = formatNumber(mafProfit);
+        }
+
+        // Sort versions based on current sort option
+        function sortVersions(versions) {
+            return versions.sort((a, b) => {
+                const [nameA, dataA] = a;
+                const [nameB, dataB] = b;
+
+                let comparison = 0;
+
+                switch (currentSort) {
+                    case 'score':
+                        comparison = dataB.score - dataA.score;
+                        break;
+                    case 'profit':
+                        comparison = dataB.profit - dataA.profit;
+                        break;
+                    case 'name':
+                        comparison = nameA.localeCompare(nameB);
+                        break;
+                }
+
+                return sortDescending ? comparison : -comparison;
+            });
+        }
+
+        // Update leaderboard
+        function updateLeaderboard() {
+            const versions = Object.entries(algorithms);
+
+            if (versions.length === 0) {
+                document.getElementById('leaderboard').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📊</div>
+                        <div>No algorithms yet</div>
+                        <div style="font-size: 0.9rem; margin-top: 10px;">Upload your first competition log to get started</div>
+                    </div>
+                `;
+                updateChampion();
+                return;
+            }
+
+            // Sort by current sort option
+            const sorted = sortVersions(versions);
+
+            let html = '';
+            sorted.forEach(([name, data], index) => {
+                const rank = index + 1;
+                const tier = getTierInfo(data.profit);
+                const profitClass = data.profit >= 0 ? 'positive' : 'negative';
+
+                html += `
+                    <div class="leaderboard-row ${rank === 1 ? 'champion' : ''}" data-name="${name}">
+                        <div class="rank rank-${rank}">${rank}</div>
+                        <div class="version-info">
+                            <div class="version-name">
+                                ${name}
+                                <span class="tier-badge ${tier.class}">${tier.emoji} ${tier.name}</span>
+                            </div>
+                            <div class="version-details">
+                                Rating: ${data.score.toLocaleString()} | OSMIUM: ${formatNumber(data.componentProfits.osmium)} | PEPPER: ${formatNumber(data.componentProfits.pepper)} | MAF: ${formatNumber(data.profit - data.componentProfits.osmium - data.componentProfits.pepper)}
+                            </div>
+                        </div>
+                        <div class="version-metrics">
+                            <div class="profit-value ${profitClass}">${data.score.toLocaleString()}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('leaderboard').innerHTML = html;
+            updateChampion();
+
+            // Add click handlers to rows
+            document.querySelectorAll('.leaderboard-row').forEach(row => {
+                row.addEventListener('click', () => {
+                    const name = row.dataset.name;
+                    showInsights(name);
+                });
+            });
+        }
+
+        function showInsights(name) {
+            const data = algorithms[name];
+            if (!data) return;
+
+            document.getElementById('insightsTitle').textContent = name;
+            document.getElementById('insightRating').textContent = data.score.toLocaleString();
+
+            const profit = data.profit;
+            const profitEl = document.getElementById('insightProfit');
+            profitEl.textContent = formatNumber(profit);
+            profitEl.className = 'insight-value ' + (profit >= 0 ? 'positive' : 'negative');
+
+            // Component bars
+            const osmiumProfit = data.componentProfits.osmium;
+            const pepperProfit = data.componentProfits.pepper;
+            const mafProfit = profit - (osmiumProfit + pepperProfit); // MAF = total - (osmium + pepper)
+            const maxComponent = Math.max(Math.abs(osmiumProfit), Math.abs(pepperProfit), Math.abs(mafProfit), 1);
+
+            const osmiumBar = document.getElementById('osmiumBar');
+            const osmiumWidth = Math.min(100, (Math.abs(osmiumProfit) / maxComponent) * 100);
+            osmiumBar.style.width = osmiumWidth + '%';
+            osmiumBar.textContent = osmiumProfit >= 0 ? '+' + osmiumProfit.toFixed(0) : osmiumProfit.toFixed(0);
+            document.getElementById('osmiumValue').textContent = formatNumber(osmiumProfit);
+            document.getElementById('osmiumValue').className = 'chart-value ' + (osmiumProfit >= 0 ? 'positive' : 'negative');
+
+            const pepperBar = document.getElementById('pepperBar');
+            const pepperWidth = Math.min(100, (Math.abs(pepperProfit) / maxComponent) * 100);
+            pepperBar.style.width = pepperWidth + '%';
+            pepperBar.textContent = pepperProfit >= 0 ? '+' + pepperProfit.toFixed(0) : pepperProfit.toFixed(0);
+            document.getElementById('pepperValue').textContent = formatNumber(pepperProfit);
+            document.getElementById('pepperValue').className = 'chart-value ' + (pepperProfit >= 0 ? 'positive' : 'negative');
+
+            const mafBar = document.getElementById('mafBar');
+            const mafWidth = Math.min(100, (Math.abs(mafProfit) / maxComponent) * 100);
+            mafBar.style.width = mafWidth + '%';
+            mafBar.textContent = mafProfit >= 0 ? '+' + mafProfit.toFixed(0) : mafProfit.toFixed(0);
+            document.getElementById('mafValue').textContent = formatNumber(mafProfit);
+            document.getElementById('mafValue').className = 'chart-value ' + (mafProfit >= 0 ? 'positive' : 'negative');
+
+            // Analysis text
+            let analysis = '';
+
+            // Check if we have component profit data
+            const hasComponentData = osmiumProfit !== 0 || pepperProfit !== 0;
+
+            // Check if component profits explain total profit (within 20%)
+            const componentTotal = osmiumProfit + pepperProfit;
+            const unaccountedProfit = profit - componentTotal;
+            const profitDiscrepancy = Math.abs(unaccountedProfit) > profit * 0.2;
+
+            // Check if both products are losing money (even if total is profitable)
+            const bothLosing = osmiumProfit < 0 && pepperProfit < 0;
+            const profitableFromMAF = profit > 3000 && bothLosing;
+
+            if (profitableFromMAF) {
+                analysis = '⚠️ High total profit but LOSING on both products! Profit likely from MAF bids, not trading. Strategy needs fundamental revision - focus on making each product profitable individually.';
+            } else if (profitDiscrepancy && profit > 5000) {
+                analysis = `⚠️ High total profit (${formatNumber(profit)}) but component profits only add to ${formatNumber(componentTotal)}. The gap of ${formatNumber(unaccountedProfit)} likely comes from MAF bids. Trading strategy needs improvement - focus on profitability from actual trades, not MAF rebates.`;
+                if (osmiumProfit > 0 && pepperProfit > 0) {
+                    analysis += ' Both products are positive, which is good, but trading profits are too small relative to MAF income.';
+                }
+            } else if (profit > 8000) {
+                analysis = `🔥 Exceptional performance! Total profit ${formatNumber(profit)}. `;
+            } else if (profit > 6000) {
+                analysis = `💎 Strong performance! Total profit ${formatNumber(profit)}. `;
+            } else if (profit > 0) {
+                analysis = `✅ Positive results: ${formatNumber(profit)} profit. `;
+            } else {
+                analysis = `⚠️ This version needs work. Loss of ${formatNumber(profit)}. `;
+            }
+
+            if (profitableFromMAF || profitDiscrepancy) {
+                // MAF/discrepancy case - already handled above
+                // Add component breakdown
+                analysis += ` OSMIUM achieved ${formatNumber(osmiumProfit)}, PEPPER achieved ${formatNumber(pepperProfit)}, MAF contributed ${formatNumber(mafProfit)}.`;
+                // DONE - no more analysis needed
+            } else if (hasComponentData) {
+                // Normal case with component data
+                analysis += ` OSMIUM achieved ${formatNumber(osmiumProfit)}, PEPPER achieved ${formatNumber(pepperProfit)}.`;
+                if (osmiumProfit > 0 && pepperProfit > 0) {
+                    analysis += ' Both products contributing positively - well balanced!';
+                } else if (osmiumProfit > pepperProfit) {
+                    analysis += ' Being carried by OSMIUM performance. Consider improving PEPPER strategy.';
+                } else if (pepperProfit > osmiumProfit) {
+                    analysis += ' Being carried by PEPPER performance. Consider improving OSMIUM strategy.';
+                } else {
+                    analysis += ' Both products struggling - major strategy revision needed.';
+                }
+            } else {
+                // No component data available
+                analysis += ' Upload a competition log with activities data for detailed analysis.';
+            }
+
+            document.getElementById('analysisText').textContent = analysis;
+            document.getElementById('insightsPanel').classList.add('show');
+        }
+
+        function hideInsights() {
+            document.getElementById('insightsPanel').classList.remove('show');
+        }
+
+        // File upload handlers
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.parentElement.style.borderColor = '#667eea';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.parentElement.style.borderColor = 'rgba(102, 126, 234, 0.5)';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.parentElement.style.borderColor = 'rgba(102, 126, 234, 0.5)';
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        async function handleFile(file) {
+            if (!file) return;
+
+            const versionName = document.getElementById('versionName').value || file.name.replace('.json', '');
+
+            try {
+                const text = await file.text();
+                const data = JSON.parse(text);
+
+                // Extract metrics
+                const profit = parseFloat(data.profit || 0);
+                const componentProfits = parseComponentProfits(data);
+
+                // Calculate performance score (win rate not used for backtesting)
+                const score = calculatePerformanceScore(profit, 0.5, componentProfits.osmium, componentProfits.pepper);
+
+                // Store algorithm data
+                algorithms[versionName] = {
+                    profit,
+                    componentProfits,
+                    score,
+                    timestamp: Date.now()
+                };
+
+                // Save to localStorage
+                localStorage.setItem('prosperity4_algorithms', JSON.stringify(algorithms));
+
+                // Update UI
+                updateLeaderboard();
+
+                // Clear input
+                document.getElementById('versionName').value = '';
+
+                // Show success
+                alert(`✅ ${versionName} uploaded!\n\nProfit: ${formatNumber(profit)}\n\nRating: ${score.toLocaleString()}`);
+
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+
+        // Export data
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            const dataStr = JSON.stringify(algorithms, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'prosperity4_algorithms.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        // Clear data
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            if (confirm('Clear all algorithm data?')) {
+                algorithms = {};
+                localStorage.removeItem('prosperity4_algorithms');
+                localStorage.removeItem('prosperity_algorithms'); // Clear old storage too
+                updateLeaderboard();
+            }
+        });
+
+        // Sort button handlers
+        document.querySelectorAll('.sort-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const sortType = btn.dataset.sort;
+
+                // Toggle direction if clicking same sort
+                if (sortType === currentSort) {
+                    sortDescending = !sortDescending;
+                } else {
+                    currentSort = sortType;
+                    sortDescending = true;
+                }
+
+                // Update active state
+                document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // Update button text to show direction
+                const arrow = sortDescending ? '↓' : '↑';
+                btn.textContent = btn.textContent.replace(/[↓↑]/, arrow);
+
+                updateLeaderboard();
+            });
+        });
+
+        // Close insights panel
+        document.getElementById('closeInsights').addEventListener('click', hideInsights);
+
+        // Initial load
+        updateLeaderboard();
+    </script>
+</body>
+</html>
