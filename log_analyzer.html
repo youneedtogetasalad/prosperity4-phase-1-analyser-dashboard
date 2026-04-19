@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prosperity 4 Log Analyzer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .upload-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            margin-bottom: 30px;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 60px 20px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .upload-area.dragover {
+            border-color: #764ba2;
+            background: rgba(102, 126, 234, 0.1);
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .upload-text {
+            font-size: 1.2rem;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .upload-hint {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .results-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: none;
+        }
+
+        .results-card.show {
+            display: block;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            color: #667eea;
+            margin-bottom: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .metric {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            border-radius: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .metric-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .metric.profit {
+            background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);
+            border-left-color: #27ae60;
+        }
+
+        .metric.loss {
+            background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+            border-left-color: #e74c3c;
+        }
+
+        .analysis-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            margin-bottom: 15px;
+        }
+
+        .analysis-box h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .analysis-box p {
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .copy-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 20px;
+        }
+
+        .copy-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .insight-tag {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .insight-tag.positive {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .insight-tag.negative {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .insight-tag.neutral {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .comparison-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            display: none;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .summary-text {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border: 2px solid #667eea;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .file-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .file-size {
+            color: #666;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Prosperity 4 Log Analyzer</h1>
+            <p>Upload your competition logs for instant AI-ready analysis</p>
+        </div>
+
+        <div class="upload-card">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📊</div>
+                <div class="upload-text">Drag & drop your log files here</div>
+                <div class="upload-hint">or click to browse (.json or .log files)</div>
+            </div>
+            <input type="file" id="fileInput" accept=".json,.log" multiple>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Analyzing your log...</p>
+        </div>
+
+        <div class="results-card" id="results">
+            <div class="file-info" id="fileInfo"></div>
+
+            <div class="section">
+                <div class="section-title">📈 Performance Summary</div>
+                <div class="metric-grid" id="metrics"></div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">🏆 ELO Rating</div>
+                <div id="eloSection"></div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">🔍 Key Insights</div>
+                <div id="insights"></div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">📊 Detailed Analysis</div>
+                <div id="detailedAnalysis"></div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">📋 AI-Ready Summary</div>
+                <p style="color: #666; margin-bottom: 10px;">Copy this summary and paste it to Claude:</p>
+                <div class="summary-text" id="summaryText"></div>
+            </div>
+
+            <button class="copy-btn" id="copyBtn">📋 Copy Summary to Clipboard</button>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            if (files.length === 0) return;
+
+            loading.classList.add('show');
+            results.classList.remove('show');
+
+            // Process first file
+            const file = files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                setTimeout(() => {
+                    analyzeLog(file.name, e.target.result);
+                }, 500); // Small delay for UX
+            };
+
+            reader.readAsText(file);
+        }
+
+        function analyzeLog(filename, content) {
+            let data;
+
+            // Try to parse as JSON
+            try {
+                data = JSON.parse(content);
+            } catch (e) {
+                // If not JSON, parse as log
+                data = parseLogFormat(content);
+            }
+
+            const analysis = generateAnalysis(filename, data);
+            displayResults(analysis);
+        }
+
+        function parseLogFormat(content) {
+            // Parse log format if JSON parsing fails
+            const lines = content.split('\n');
+            const trades = [];
+            const activities = [];
+
+            for (const line of lines) {
+                if (line.includes('profit') || line.includes('symbol')) {
+                    activities.push(line);
+                }
+            }
+
+            return {
+                format: 'log',
+                activities: activities,
+                trades: trades
+            };
+        }
+
+        function calculateEloFromProfit(profit) {
+            // Chess-style ELO calculation based on profit
+            const BASE_ELO = 1500;
+            const K_FACTOR = 32;
+
+            // Profit to ELO conversion (10000 profit = max gain, 0 profit = baseline)
+            const maxProfit = 10000;
+            const profitRatio = Math.max(0, Math.min(1, profit / maxProfit));
+
+            // Calculate ELO based on profit performance
+            // +500 ELO for perfect performance (10000 profit)
+            // -300 ELO for zero/negative profit
+            const eloGain = profitRatio * 500;
+            const eloLoss = (1 - profitRatio) * 300;
+
+            const elo = Math.round(BASE_ELO + eloGain - eloLoss);
+
+            // Determine rating and tier
+            let rating, tier;
+            if (profit >= 10000) {
+                rating = 'EXCELLENT 🌟';
+                tier = 'Grandmaster';
+            } else if (profit >= 8000) {
+                rating = 'VERY GOOD ✅';
+                tier = 'Master';
+            } else if (profit >= 6000) {
+                rating = 'GOOD 👍';
+                tier = 'Diamond';
+            } else if (profit >= 4000) {
+                rating = 'MEDIUM 😐';
+                tier = 'Platinum';
+            } else if (profit >= 2000) {
+                rating = 'FAIR 😕';
+                tier = 'Gold';
+            } else {
+                rating = 'POOR 💔';
+                tier = 'Silver';
+            }
+
+            // Calculate expected win rate vs baseline (1500 ELO)
+            const expectedWinRate = 1 / (1 + Math.pow(10, (BASE_ELO - elo) / 400));
+            const winRatePercent = (expectedWinRate * 100).toFixed(1);
+
+            return {
+                elo: elo,
+                rating: rating,
+                tier: tier,
+                winRate: winRatePercent
+            };
+        }
+
+        function generateAnalysis(filename, data) {
+            const analysis = {
+                filename: filename,
+                format: data.format || 'json',
+                metrics: {},
+                insights: [],
+                details: {},
+                summary: '',
+                timeAnalysis: {},
+                ratings: {}
+            };
+
+            // Extract basic info
+            if (data.round !== undefined) {
+                analysis.metrics.round = data.round;
+            }
+
+            if (data.status !== undefined) {
+                analysis.metrics.status = data.status;
+            }
+
+            if (data.profit !== undefined) {
+                analysis.metrics.profit = data.profit;
+            }
+
+            if (data.profit_and_loss !== undefined) {
+                analysis.metrics.pnl = data.profit_and_loss;
+            }
+
+            // Analyze positions
+            if (data.positions) {
+                analysis.metrics.positions = data.positions;
+
+                data.positions.forEach(pos => {
+                    if (pos.symbol && pos.symbol.includes('OSMIUM')) {
+                        analysis.metrics.osmiumPosition = pos.quantity;
+                    } else if (pos.symbol && pos.symbol.includes('PEPPER')) {
+                        analysis.metrics.pepperPosition = pos.quantity;
+                    }
+                });
+            }
+
+            // Try to extract graph data for time-based analysis
+            if (data.graphLog) {
+                analyzeTimePerformance(data, analysis);
+            }
+
+            // Generate ratings
+            generateRatings(analysis);
+
+            // Generate insights
+            generateInsights(analysis);
+
+            // Generate summary
+            analysis.summary = generateSummary(analysis);
+
+            return analysis;
+        }
+
+        function analyzeTimePerformance(data, analysis) {
+            const graphLog = data.graphLog;
+            if (!graphLog || graphLog.length === 0) return;
+
+            // Extract profit over time
+            const profits = [];
+            const timestamps = [];
+
+            // Sample data points
+            const sampleRate = Math.max(1, Math.floor(graphLog.length / 100));
+
+            for (let i = 0; i < graphLog.length; i += sampleRate) {
+                const entry = graphLog[i];
+                if (entry.profit_and_loss !== undefined) {
+                    profits.push(entry.profit_and_loss);
+                    timestamps.push(entry.timestamp || i);
+                }
+            }
+
+            if (profits.length > 0) {
+                analysis.timeAnalysis.profits = profits;
+                analysis.timeAnalysis.timestamps = timestamps;
+                analysis.timeAnalysis.totalPoints = profits.length;
+
+                // Calculate time-based performance
+                const third = Math.floor(profits.length / 3);
+
+                analysis.timeAnalysis.early = profits.slice(0, third);
+                analysis.timeAnalysis.mid = profits.slice(third, third * 2);
+                analysis.timeAnalysis.late = profits.slice(third * 2);
+
+                // Calculate averages
+                analysis.timeAnalysis.earlyAvg = analysis.timeAnalysis.early.reduce((a, b) => a + b, 0) / analysis.timeAnalysis.early.length;
+                analysis.timeAnalysis.midAvg = analysis.timeAnalysis.mid.reduce((a, b) => a + b, 0) / analysis.timeAnalysis.mid.length;
+                analysis.timeAnalysis.lateAvg = analysis.timeAnalysis.late.reduce((a, b) => a + b, 0) / analysis.timeAnalysis.late.length;
+            }
+        }
+
+        function ratePerformance(value, type) {
+            if (type === 'profit') {
+                if (value >= 10000) return { rating: 'EXCELLENT', color: '#27ae60', emoji: '🌟' };
+                if (value >= 8000) return { rating: 'VERY GOOD', color: '#2ecc71', emoji: '✅' };
+                if (value >= 6000) return { rating: 'GOOD', color: '#3498db', emoji: '👍' };
+                if (value >= 4000) return { rating: 'MEDIUM', color: '#f39c12', emoji: '😐' };
+                if (value >= 2000) return { rating: 'FAIR', color: '#e67e22', emoji: '😕' };
+                return { rating: 'POOR', color: '#e74c3c', emoji: '❌' };
+            }
+            return { rating: 'N/A', color: '#95a5a6', emoji: '➖' };
+        }
+
+        function generateRatings(analysis) {
+            const profit = analysis.metrics.profit || 0;
+
+            // Overall rating
+            analysis.ratings.overall = ratePerformance(profit, 'profit');
+
+            // Time-based ratings
+            if (analysis.timeAnalysis.earlyAvg !== undefined) {
+                analysis.ratings.early = ratePerformance(analysis.timeAnalysis.earlyAvg, 'profit');
+                analysis.ratings.mid = ratePerformance(analysis.timeAnalysis.midAvg, 'profit');
+                analysis.ratings.late = ratePerformance(analysis.timeAnalysis.lateAvg, 'profit');
+            }
+
+            // Position rating
+            const osmiumPos = Math.abs(analysis.metrics.osmiumPosition || 0);
+            const pepperPos = Math.abs(analysis.metrics.pepperPosition || 0);
+
+            if (osmiumPos === 0 && pepperPos === 0) {
+                analysis.ratings.positions = { rating: 'CLEAN', color: '#27ae60', emoji: '✨' };
+            } else if (osmiumPos < 20 && pepperPos < 20) {
+                analysis.ratings.positions = { rating: 'GOOD', color: '#2ecc71', emoji: '👍' };
+            } else if (osmiumPos < 50 && pepperPos < 50) {
+                analysis.ratings.positions = { rating: 'ACCEPTABLE', color: '#f39c12', emoji: '😐' };
+            } else {
+                analysis.ratings.positions = { rating: 'CONCERNING', color: '#e74c3c', emoji: '⚠️' };
+            }
+        }
+
+        function generateInsights(analysis) {
+            const profit = analysis.metrics.profit || analysis.metrics.pnl || 0;
+
+            // Profit insight
+            if (profit > 0) {
+                analysis.insights.push({
+                    type: 'positive',
+                    text: `✅ Profitable: ${profit.toFixed(2)} XIRECs`
+                });
+            } else {
+                analysis.insights.push({
+                    type: 'negative',
+                    text: `❌ Loss: ${profit.toFixed(2)} XIRECs`
+                });
+            }
+
+            // Position insights
+            const osmiumPos = analysis.metrics.osmiumPosition || 0;
+            const pepperPos = analysis.metrics.pepperPosition || 0;
+
+            if (Math.abs(osmiumPos) > 20) {
+                analysis.insights.push({
+                    type: 'neutral',
+                    text: `⚠️ Large OSMIUM position: ${osmiumPos} (was EOD close used?)`
+                });
+            } else if (osmiumPos === 0) {
+                analysis.insights.push({
+                    type: 'positive',
+                    text: `✅ OSMIUM: No open positions (clean close)`
+                });
+            }
+
+            if (Math.abs(pepperPos) > 20) {
+                analysis.insights.push({
+                    type: 'neutral',
+                    text: `⚠️ Large PEPPER position: ${pepperPos} (was EOD close used?)`
+                });
+            } else if (pepperPos === 0) {
+                analysis.insights.push({
+                    type: 'positive',
+                    text: `✅ PEPPER: No open positions (clean close)`
+                });
+            }
+
+            // Status insight
+            if (analysis.metrics.status) {
+                analysis.insights.push({
+                    type: 'neutral',
+                    text: `📊 Status: ${analysis.metrics.status}`
+                });
+            }
+        }
+
+        function generateSummary(analysis) {
+            let summary = `PROSPERITY 4 LOG ANALYSIS\n`;
+            summary += `======================\n\n`;
+            summary += `File: ${analysis.filename}\n`;
+            summary += `Format: ${analysis.format.toUpperCase()}\n\n`;
+
+            // Add ELO rating
+            const profit = analysis.metrics.profit || 0;
+            const eloRating = calculateEloFromProfit(profit);
+            summary += `ELO RATING:\n`;
+            summary += `-----------\n`;
+            summary += `ELO: ${eloRating.elo}\n`;
+            summary += `Tier: ${eloRating.tier}\n`;
+            summary += `Rating: ${eloRating.rating}\n`;
+            summary += `Win Rate vs Base (1500): ${eloRating.winRate}%\n\n`;
+
+            summary += `PERFORMANCE RATINGS:\n`;
+            summary += `--------------------\n`;
+            summary += `Overall: ${analysis.ratings.overall?.emoji || ''} ${analysis.ratings.overall?.rating || 'N/A'} (${profit.toFixed(2)})\n`;
+            summary += `Positions: ${analysis.ratings.positions?.emoji || ''} ${analysis.ratings.positions?.rating || 'N/A'}\n`;
+
+            if (analysis.ratings.early) {
+                summary += `\nTIME-BASED PERFORMANCE:\n`;
+                summary += `----------------------\n`;
+                summary += `Early: ${analysis.ratings.early?.emoji} ${analysis.ratings.early?.rating || 'N/A'} (${analysis.timeAnalysis.earlyAvg.toFixed(2)})\n`;
+                summary += `Mid:   ${analysis.ratings.mid?.emoji} ${analysis.ratings.mid?.rating || 'N/A'} (${analysis.timeAnalysis.midAvg.toFixed(2)})\n`;
+                summary += `Late:  ${analysis.ratings.late?.emoji} ${analysis.ratings.late?.rating || 'N/A'} (${analysis.timeAnalysis.lateAvg.toFixed(2)})\n`;
+                summary += `\nPattern: ${analyzeTimePattern(analysis)}\n`;
+            }
+
+            summary += `\nDETAILED METRICS:\n`;
+            summary += `-----------------\n`;
+
+            if (analysis.metrics.profit !== undefined) {
+                summary += `Final Profit: ${analysis.metrics.profit.toFixed(2)} XIRECs\n`;
+            }
+
+            if (analysis.metrics.round !== undefined) {
+                summary += `Round: ${analysis.metrics.round}\n`;
+            }
+
+            if (analysis.metrics.status !== undefined) {
+                summary += `Status: ${analysis.metrics.status}\n`;
+            }
+
+            summary += `\nFINAL POSITIONS:\n`;
+            summary += `----------------\n`;
+
+            if (analysis.metrics.positions) {
+                analysis.metrics.positions.forEach(pos => {
+                    summary += `${pos.symbol}: ${pos.quantity}\n`;
+                });
+            }
+
+            summary += `\nKEY INSIGHTS:\n`;
+            summary += `------------\n`;
+
+            analysis.insights.forEach(insight => {
+                summary += `${insight.text}\n`;
+            });
+
+            summary += `\nRECOMMENDATIONS:\n`;
+            summary += `----------------\n`;
+
+            const osmiumPos = Math.abs(analysis.metrics.osmiumPosition || 0);
+            const pepperPos = Math.abs(analysis.metrics.pepperPosition || 0);
+
+            if (osmiumPos > 10) {
+                summary += `• OSMIUM: Consider adding EOD force close (position: ${analysis.metrics.osmiumPosition})\n`;
+            } else if (osmiumPos === 0) {
+                summary += `✅ OSMIUM: Clean exit - EOD close working!\n`;
+            }
+
+            if (pepperPos > 10) {
+                summary += `• PEPPER: Consider adding EOD force close (position: ${analysis.metrics.pepperPosition})\n`;
+            } else if (pepperPos === 0) {
+                summary += `✅ PEPPER: Clean exit - EOD close working!\n`;
+            }
+
+            if (analysis.ratings.overall?.rating === 'POOR' || analysis.ratings.overall?.rating === 'FAIR') {
+                summary += `• Performance ${analysis.ratings.overall.rating}: Consider strategy overhaul\n`;
+            } else if (analysis.ratings.overall?.rating === 'EXCELLENT') {
+                summary += `✅ Performance ${analysis.ratings.overall.rating}: Current strategy is working!\n`;
+            }
+
+            // Time-based recommendations
+            if (analysis.timeAnalysis.earlyAvg !== undefined) {
+                if (analysis.timeAnalysis.lateAvg < analysis.timeAnalysis.earlyAvg * 0.9) {
+                    summary += `• ⚠️ Late game weakness detected: Strong EOD close needed\n`;
+                } else if (analysis.timeAnalysis.lateAvg > analysis.timeAnalysis.earlyAvg * 1.1) {
+                    summary += `✅ Strong finish: Strategy adapts well to late game\n`;
+                }
+
+                if (analysis.timeAnalysis.earlyAvg > analysis.timeAnalysis.midAvg) {
+                    summary += `• Early game strength: Preserve early gains better\n`;
+                } else if (analysis.timeAnalysis.lateAvg > analysis.timeAnalysis.midAvg) {
+                    summary += `• Late game strength: Build position toward end\n`;
+                }
+            }
+
+            summary += `\nNEXT STEPS:\n`;
+            summary += `-----------\n`;
+            summary += `1. Compare ratings with other versions\n`;
+            summary += `2. Identify best time period (early/mid/late)\n`;
+            summary += `3. Adjust strategy based on weak periods\n`;
+            summary += `4. Test and iterate\n`;
+
+            return summary;
+        }
+
+        function displayResults(analysis) {
+            loading.classList.remove('show');
+            results.classList.add('show');
+
+            // Display file info
+            const fileInfo = document.getElementById('fileInfo');
+            fileInfo.innerHTML = `
+                <span class="file-name">📄 ${analysis.filename}</span>
+                <span class="file-size">${analysis.format.toUpperCase()} format</span>
+            `;
+
+            // Display metrics
+            const metricsDiv = document.getElementById('metrics');
+            let metricsHTML = '';
+
+            // Overall rating
+            if (analysis.ratings.overall) {
+                const rating = analysis.ratings.overall;
+                metricsHTML += `
+                    <div class="metric" style="background: linear-gradient(135deg, ${rating.color}22 0%, ${rating.color} 100%); border-left-color: ${rating.color};">
+                        <div class="metric-label">Overall Rating</div>
+                        <div class="metric-value" style="color: white;">${rating.emoji} ${rating.rating}</div>
+                    </div>
+                `;
+            }
+
+            if (analysis.metrics.profit !== undefined) {
+                const profit = analysis.metrics.profit;
+                const profitClass = profit >= 0 ? 'profit' : 'loss';
+                metricsHTML += `
+                    <div class="metric ${profitClass}">
+                        <div class="metric-label">Final Profit</div>
+                        <div class="metric-value">${profit.toFixed(2)}</div>
+                    </div>
+                `;
+            }
+
+            if (analysis.metrics.round !== undefined) {
+                metricsHTML += `
+                    <div class="metric">
+                        <div class="metric-label">Round</div>
+                        <div class="metric-value">${analysis.metrics.round}</div>
+                    </div>
+                `;
+            }
+
+            if (analysis.metrics.status !== undefined) {
+                metricsHTML += `
+                    <div class="metric">
+                        <div class="metric-label">Status</div>
+                        <div class="metric-value">${analysis.metrics.status}</div>
+                    </div>
+                `;
+            }
+
+            if (analysis.metrics.osmiumPosition !== undefined) {
+                metricsHTML += `
+                    <div class="metric">
+                        <div class="metric-label">OSMIUM Position</div>
+                        <div class="metric-value">${analysis.metrics.osmiumPosition}</div>
+                    </div>
+                `;
+            }
+
+            if (analysis.metrics.pepperPosition !== undefined) {
+                metricsHTML += `
+                    <div class="metric">
+                        <div class="metric-label">PEPPER Position</div>
+                        <div class="metric-value">${analysis.metrics.pepperPosition}</div>
+                    </div>
+                `;
+            }
+
+            // Position rating
+            if (analysis.ratings.positions) {
+                const rating = analysis.ratings.positions;
+                metricsHTML += `
+                    <div class="metric" style="background: ${rating.color}22; border-left-color: ${rating.color};">
+                        <div class="metric-label">Position Rating</div>
+                        <div class="metric-value">${rating.emoji} ${rating.rating}</div>
+                    </div>
+                `;
+            }
+
+            metricsDiv.innerHTML = metricsHTML;
+
+            // Display ELO rating
+            const eloSection = document.getElementById('eloSection');
+            const profit = analysis.metrics.profit || 0;
+            const eloRating = calculateEloFromProfit(profit);
+            eloSection.innerHTML = `
+                <div class="analysis-box" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);">
+                    <h4>🏆 ELO Rating: ${eloRating.elo}</h4>
+                    <p><strong>Rating:</strong> ${eloRating.rating}</p>
+                    <p><strong>Performance Tier:</strong> ${eloRating.tier}</p>
+                    <p><strong>Expected Win Rate vs Base (1500):</strong> ${eloRating.winRate}%</p>
+                    <p style="margin-top: 10px; font-size: 0.9rem; color: #666;">Based on chess-style ELO calculation. Higher ELO = stronger algorithm.</p>
+                </div>
+            `;
+
+            // Display insights
+            const insightsDiv = document.getElementById('insights');
+            insightsDiv.innerHTML = analysis.insights.map(insight => `
+                <span class="insight-tag ${insight.type}">${insight.text}</span>
+            `).join('');
+
+            // Display detailed analysis
+            const detailsDiv = document.getElementById('detailedAnalysis');
+            let detailsHTML = '';
+
+            // Performance analysis
+            detailsHTML += `
+                <div class="analysis-box">
+                    <h4>📊 Performance Analysis</h4>
+                    <p>Final profit: <strong>${(analysis.metrics.profit || 0).toFixed(2)} XIRECs</strong> ${analysis.metrics.profit >= 0 ? '✅' : '❌'}</p>
+                    <p>Rating: <strong style="color: ${analysis.ratings.overall?.color || '#333'}">${analysis.ratings.overall?.emoji || ''} ${analysis.ratings.overall?.rating || 'N/A'}</strong></p>
+                </div>
+            `;
+
+            // Time-based analysis
+            if (analysis.timeAnalysis.earlyAvg !== undefined) {
+                detailsHTML += `
+                    <div class="analysis-box">
+                        <h4>⏰ Time-Based Performance</h4>
+                        <table class="comparison-table">
+                            <tr>
+                                <th>Period</th>
+                                <th>Avg Profit</th>
+                                <th>Rating</th>
+                            </tr>
+                            <tr>
+                                <td>🌅 Early (0-33%)</td>
+                                <td>${analysis.timeAnalysis.earlyAvg.toFixed(2)}</td>
+                                <td style="color: ${analysis.ratings.early?.color || '#333'}">${analysis.ratings.early?.emoji} ${analysis.ratings.early?.rating || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td>☀️ Mid (33-66%)</td>
+                                <td>${analysis.timeAnalysis.midAvg.toFixed(2)}</td>
+                                <td style="color: ${analysis.ratings.mid?.color || '#333'}">${analysis.ratings.mid?.emoji} ${analysis.ratings.mid?.rating || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td>🌆 Late (66-100%)</td>
+                                <td>${analysis.timeAnalysis.lateAvg.toFixed(2)}</td>
+                                <td style="color: ${analysis.ratings.late?.color || '#333'}">${analysis.ratings.late?.emoji} ${analysis.ratings.late?.rating || 'N/A'}</td>
+                            </tr>
+                        </table>
+                        <p style="margin-top: 10px;"><strong>Pattern:</strong> ${analyzeTimePattern(analysis)}</p>
+                    </div>
+                `;
+            }
+
+            // Position analysis
+            detailsHTML += `
+                <div class="analysis-box">
+                    <h4>🎯 Position Analysis</h4>
+                    <p>OSMIUM: ${analysis.metrics.osmiumPosition || 0} | PEPPER: ${analysis.metrics.pepperPosition || 0}</p>
+                    <p>Rating: <strong style="color: ${analysis.ratings.positions?.color || '#333'}">${analysis.ratings.positions?.emoji} ${analysis.ratings.positions?.rating || 'N/A'}</strong></p>
+                </div>
+            `;
+
+            detailsDiv.innerHTML = detailsHTML;
+
+            // Display summary
+            document.getElementById('summaryText').textContent = analysis.summary;
+        }
+
+        function analyzeTimePattern(analysis) {
+            const early = analysis.timeAnalysis.earlyAvg;
+            const mid = analysis.timeAnalysis.midAvg;
+            const late = analysis.timeAnalysis.lateAvg;
+
+            if (early === undefined) return 'Insufficient data for time analysis';
+
+            const patterns = [];
+
+            if (late > early * 1.2) {
+                patterns.push('📈 Strong finish (late game performance)');
+            } else if (late < early * 0.8) {
+                patterns.push('📉 Late game weakness (consider EOD close)');
+            }
+
+            if (mid > early && mid > late) {
+                patterns.push('🎯 Peak performance in mid-game');
+            } else if (early > mid && early > late) {
+                patterns.push('🚀 Strong start, fading (preserve early gains)');
+            }
+
+            if (early < mid && mid < late) {
+                patterns.push('📈 Consistent improvement (strategy adapting well)');
+            } else if (early > mid && mid < late) {
+                patterns.push('🔄 Learning curve (improving over time)');
+            }
+
+            return patterns.length > 0 ? patterns.join(' | ') : 'Stable performance throughout';
+        }
+
+        // Copy functionality
+        document.getElementById('copyBtn').addEventListener('click', () => {
+            const summaryText = document.getElementById('summaryText').textContent;
+
+            // Check if there's content to copy
+            if (!summaryText || summaryText.trim() === '') {
+                alert('No summary to copy yet. Please upload a log file first.');
+                return;
+            }
+
+            // Try clipboard API first
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(summaryText).then(() => {
+                    const btn = document.getElementById('copyBtn');
+                    btn.textContent = '✅ Copied!';
+                    setTimeout(() => {
+                        btn.textContent = '📋 Copy Summary to Clipboard';
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Clipboard API failed:', err);
+                    // Fallback: try old method
+                    fallbackCopyTextToClipboard(summaryText);
+                });
+            } else {
+                // Fallback for older browsers
+                fallbackCopyTextToClipboard(summaryText);
+            }
+        });
+
+        function fallbackCopyTextToClipboard(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                const btn = document.getElementById('copyBtn');
+                if (successful) {
+                    btn.textContent = '✅ Copied!';
+                    setTimeout(() => {
+                        btn.textContent = '📋 Copy Summary to Clipboard';
+                    }, 2000);
+                } else {
+                    btn.textContent = '❌ Failed';
+                    setTimeout(() => {
+                        btn.textContent = '📋 Copy Summary to Clipboard';
+                    }, 2000);
+                }
+            } catch (err) {
+                console.error('Fallback copy failed:', err);
+                const btn = document.getElementById('copyBtn');
+                btn.textContent = '❌ Failed';
+                setTimeout(() => {
+                    btn.textContent = '📋 Copy Summary to Clipboard';
+                }, 2000);
+            }
+
+            document.body.removeChild(textArea);
+        }
+    </script>
+</body>
+</html>
